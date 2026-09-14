@@ -7,3 +7,5 @@ if (POLICY CMP0141)
 endif()
 
 project ("DistributedQueryEngine")
+
+add_subdirectory("generator")
