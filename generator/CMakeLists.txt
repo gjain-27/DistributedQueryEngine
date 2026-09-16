@@ -14,3 +14,7 @@ target_link_libraries(DataGenerator PRIVATE
 target_include_directories(DataGenerator PRIVATE
 	"include"
 )
+
+target_compile_definitions(DataGenerator PRIVATE
+    DQE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
