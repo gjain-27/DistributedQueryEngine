@@ -8,4 +8,5 @@ endif()
 
 project ("DistributedQueryEngine")
 
+add_subdirectory("common")
 add_subdirectory("generator")
