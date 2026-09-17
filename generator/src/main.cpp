@@ -4,6 +4,7 @@
 #include <filesystem>
 
 #include "env_reader.hpp"
+#include "customers_generator.hpp"
 
 int main() {
 	try {
@@ -18,6 +19,12 @@ int main() {
 			std::cerr << "Failed to open a connection with the database" << std::endl;
 			return 1;
 		}
+
+		CustomerGenerator customerGenerator{10000,  databaseConnection};
+		customerGenerator.deleteExistingData();
+		customerGenerator.generateData();
+
+		std::cout << "Generated customers" << std::endl;
 
 	} catch (std::exception& e) {
 		std::cerr << "Database Error: " << e.what() << std::endl;

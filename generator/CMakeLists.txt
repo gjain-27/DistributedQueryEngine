@@ -2,6 +2,7 @@ find_package(libpqxx CONFIG REQUIRED)
 
 add_executable(DataGenerator
 	src/main.cpp
+	src/customers_generator.cpp
 )
 
 target_compile_features(DataGenerator PRIVATE cxx_std_20)
