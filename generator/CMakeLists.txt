@@ -5,6 +5,7 @@ add_executable(DataGenerator
 	src/customers_generator.cpp
 	src/products_generator.cpp
 	src/stores_generator.cpp
+	src/transactions_generator.cpp
 )
 
 target_compile_features(DataGenerator PRIVATE cxx_std_20)
