@@ -10,7 +10,6 @@ public:
 	CustomerGenerator(pqxx::connection& databaseconnection);
 
 	void generateData(int customerCount);
-	void deleteAllExistingData();
 private:
 	pqxx::connection& mDatabaseConnection;
 

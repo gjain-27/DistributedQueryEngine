@@ -10,7 +10,6 @@ public:
 	ProductGenerator(pqxx::connection& databaseConnection);
 
 	void generateData(int productCount);
-	void deleteAllExistingData();
 private:
 	pqxx::connection& mDatabaseConnection;
 

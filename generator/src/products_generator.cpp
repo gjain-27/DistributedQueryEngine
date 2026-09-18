@@ -5,13 +5,14 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 ProductGenerator::ProductGenerator(pqxx::connection& databaseConnection)
 	: mDatabaseConnection(databaseConnection) {}
 
 void ProductGenerator::generateData(int productCount) {
-	if (mCurrencyCodes.size() <= 0) throw std::runtime_error("Currency codes are empty");
-	if (mCategories.size() <= 0) throw std::runtime_error("Categories are empty");
+	if (mCurrencyCodes.empty()) throw std::runtime_error("Currency codes are empty");
+	if (mCategories.empty()) throw std::runtime_error("Categories are empty");
 
 	std::random_device randomDevice;
 	std::mt19937 generator(randomDevice());
@@ -37,13 +38,5 @@ void ProductGenerator::generateData(int productCount) {
 	}
 
 	stream.complete();
-	transaction.commit();
-}
-
-void ProductGenerator::deleteAllExistingData() {
-	pqxx::work transaction(mDatabaseConnection);
-
-	transaction.exec0("DELETE FROM products");
-
 	transaction.commit();
 }

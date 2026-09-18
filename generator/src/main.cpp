@@ -1,11 +1,13 @@
 #include <pqxx/pqxx>
 
 #include <iostream>
-#include <filesystem>
 
 #include "env_reader.hpp"
 #include "customers_generator.hpp"
 #include "products_generator.hpp"
+#include "stores_generator.hpp"
+
+void deleteAllExistingDataFromDatabase(pqxx::connection& databaseConnection);
 
 int main() {
 	try {
@@ -21,17 +23,23 @@ int main() {
 			return 1;
 		}
 
+		deleteAllExistingDataFromDatabase(databaseConnection);
+		std::cout << "Database cleared" << std::endl;
+
 		CustomerGenerator customerGenerator{ databaseConnection };
-		customerGenerator.deleteAllExistingData();
 		customerGenerator.generateData(10000);
 
 		std::cout << "Generated customers" << std::endl;
 
 		ProductGenerator productGenerator{ databaseConnection };
-		productGenerator.deleteAllExistingData();
 		productGenerator.generateData(500);
 
 		std::cout << "Generated products" << std::endl;
+
+		StoreGenerator storeGenerator{ databaseConnection };
+		storeGenerator.generateData(10);
+
+		std::cout << "Generated stores" << std::endl;
 
 	} catch (std::exception& e) {
 		std::cerr << "Error: " << e.what() << std::endl;
@@ -40,4 +48,12 @@ int main() {
 
 
 	return 0;
+}
+
+void deleteAllExistingDataFromDatabase(pqxx::connection& databaseConnection) {
+	pqxx::work transaction{ databaseConnection };
+
+	transaction.exec0("TRUNCATE TABLE customers, products, stores, transactions CASCADE");
+
+	transaction.commit();
 }

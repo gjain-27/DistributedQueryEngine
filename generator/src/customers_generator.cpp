@@ -5,12 +5,13 @@
 #include <random>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 
 CustomerGenerator::CustomerGenerator(pqxx::connection& databaseConnection) 
 	: mDatabaseConnection(databaseConnection) {}
 
 void CustomerGenerator::generateData(int customerCount) {
-	if (mCountryCodes.size() <= 0) throw std::runtime_error("Country codes are empty");
+	if (mCountryCodes.empty()) throw std::runtime_error("Country codes are empty");
 
 	std::random_device randomDevice;
 	std::mt19937 generator(randomDevice());
@@ -28,13 +29,5 @@ void CustomerGenerator::generateData(int customerCount) {
 	}
 
 	stream.complete();
-	transaction.commit();
-}
-
-void CustomerGenerator::deleteAllExistingData() {
-	pqxx::work transaction(mDatabaseConnection);
-
-	transaction.exec0("DELETE FROM customers");
-
 	transaction.commit();
 }
