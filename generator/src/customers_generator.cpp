@@ -6,10 +6,10 @@
 #include <stdexcept>
 #include <string>
 
-CustomerGenerator::CustomerGenerator(int numberOfCustomers, pqxx::connection& databaseConnection) 
-	: mCustomerCount(numberOfCustomers), mDatabaseConnection(databaseConnection) {}
+CustomerGenerator::CustomerGenerator(pqxx::connection& databaseConnection) 
+	: mDatabaseConnection(databaseConnection) {}
 
-void CustomerGenerator::generateData() const {
+void CustomerGenerator::generateData(int customerCount) {
 	if (mCountryCodes.size() <= 0) throw std::runtime_error("Country codes are empty");
 
 	std::random_device randomDevice;
@@ -17,19 +17,21 @@ void CustomerGenerator::generateData() const {
 
 	std::uniform_int_distribution<std::size_t> uniformDistribution(0, mCountryCodes.size() - 1);
 	
-	pqxx::work transaction(mDatabaseConnection);
+	pqxx::work transaction{mDatabaseConnection};
+	auto stream = pqxx::stream_to::table(transaction, {"customers"}, {"country_code"});
 
-	for (int i = 0; i < mCustomerCount; i++) {
+	for (int i = 0; i < customerCount; i++) {
 		size_t randomCountryCodeIndex = uniformDistribution(generator);
-		std::string randomCountryCode = mCountryCodes[randomCountryCodeIndex];
+		const std::string& randomCountryCode = mCountryCodes[randomCountryCodeIndex];
 
-		transaction.exec_params0("INSERT INTO customers (country_code) VALUES ($1)", randomCountryCode);
+		stream << std::make_tuple(randomCountryCode);
 	}
 
+	stream.complete();
 	transaction.commit();
 }
 
-void CustomerGenerator::deleteExistingData() const {
+void CustomerGenerator::deleteAllExistingData() {
 	pqxx::work transaction(mDatabaseConnection);
 
 	transaction.exec0("DELETE FROM customers");

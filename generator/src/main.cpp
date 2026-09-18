@@ -5,6 +5,7 @@
 
 #include "env_reader.hpp"
 #include "customers_generator.hpp"
+#include "products_generator.hpp"
 
 int main() {
 	try {
@@ -20,14 +21,20 @@ int main() {
 			return 1;
 		}
 
-		CustomerGenerator customerGenerator{10000,  databaseConnection};
-		customerGenerator.deleteExistingData();
-		customerGenerator.generateData();
+		CustomerGenerator customerGenerator{ databaseConnection };
+		customerGenerator.deleteAllExistingData();
+		customerGenerator.generateData(10000);
 
 		std::cout << "Generated customers" << std::endl;
 
+		ProductGenerator productGenerator{ databaseConnection };
+		productGenerator.deleteAllExistingData();
+		productGenerator.generateData(500);
+
+		std::cout << "Generated products" << std::endl;
+
 	} catch (std::exception& e) {
-		std::cerr << "Database Error: " << e.what() << std::endl;
+		std::cerr << "Error: " << e.what() << std::endl;
 		return 1;
 	}
 
