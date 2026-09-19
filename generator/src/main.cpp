@@ -46,14 +46,14 @@ int main() {
 
 		start = std::chrono::steady_clock::now();
 		StoreGenerator storeGenerator{ databaseConnection };
-		storeGenerator.generateData(10);
+		storeGenerator.generateData(20);
 		end = std::chrono::steady_clock::now();
 
 		std::cout << "Generated stores, time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
 
 		start = std::chrono::steady_clock::now();
 		TransactionGenerator transactionGenerator{ databaseConnection };
-		transactionGenerator.generateData(1000000);
+		transactionGenerator.generateData(10000000);
 		end = std::chrono::steady_clock::now();
 
 		std::cout << "Generated transactions, time taken: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;

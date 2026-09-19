@@ -4,6 +4,9 @@
 #include <vector>
 #include <tuple>
 #include <random>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 #include "currency_manager.hpp"
 
@@ -13,12 +16,20 @@ struct Product {
 	Currency currencyCode;
 
 	Product(std::string productId, std::int64_t basePrice, Currency currencyCode) :
-		productId(std::move(productId)), basePrice(basePrice), currencyCode(currencyCode) {
-	}
+		productId(std::move(productId)), basePrice(basePrice), currencyCode(currencyCode) {}
 };
 
 TransactionGenerator::TransactionGenerator(pqxx::connection& databaseConnection)
-	: mDatabaseConnection(databaseConnection) {
+	: mDatabaseConnection(databaseConnection) {}
+
+std::string formatTimestamp(std::chrono::system_clock::time_point timePoint) {
+	std::time_t time = std::chrono::system_clock::to_time_t(timePoint);
+	std::tm utcTime{};
+	gmtime_s(&utcTime, &time);
+
+	std::ostringstream oss;
+	oss << std::put_time(&utcTime, "%Y-%m-%dT%H:%M:%SZ");
+	return oss.str();
 }
 
 void TransactionGenerator::generateData(int transactionCount) {
@@ -44,7 +55,15 @@ void TransactionGenerator::generateData(int transactionCount) {
 	std::uniform_int_distribution<size_t> currencyUniformDistribution(0, currencyManager.getCurrencyCodesCount() - 1);
 	std::uniform_int_distribution<int> quantityUniformDistribution(1, 20);
 
-	auto stream = pqxx::stream_to::table(transaction, { "transactions" }, { "customer_id", "product_id", "store_id", "currency_code", "quantity", "total_amount" });
+	auto now = std::chrono::system_clock::now();
+	auto twoYearsAgo = now - std::chrono::hours(24 * 365 * 2);
+
+	std::int64_t startEpochSeconds = std::chrono::duration_cast<std::chrono::seconds>(twoYearsAgo.time_since_epoch()).count();
+	std::int64_t endEpochSeconds = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+
+	std::uniform_int_distribution<std::int64_t> timestampUniformDistribution(startEpochSeconds, endEpochSeconds);
+
+	auto stream = pqxx::stream_to::table(transaction, { "transactions" }, { "customer_id", "product_id", "store_id", "currency_code", "quantity", "total_amount", "occurred_at" });
 
 	for (int i = 0; i < transactionCount; i++) {
 		const std::string& customerId = customerData[customerUniformDistribution(generator)];
@@ -54,7 +73,11 @@ void TransactionGenerator::generateData(int transactionCount) {
 		const int quantity = quantityUniformDistribution(generator);
 		const std::int64_t totalAmount = currencyManager.convert(product.basePrice * quantity, product.currencyCode, currencyCode);
 
-		stream << std::make_tuple(customerId, product.productId, storeId, currencyManager.toString(currencyCode), quantity, totalAmount);
+		std::int64_t randomEpochSeconds = timestampUniformDistribution(generator);
+		auto randomTimePoint = std::chrono::system_clock::time_point(std::chrono::seconds(randomEpochSeconds));
+		std::string occurredAt = formatTimestamp(randomTimePoint);
+
+		stream << std::make_tuple(customerId, product.productId, storeId, currencyManager.toString(currencyCode), quantity, totalAmount, occurredAt);
 	}
 
 	stream.complete();
