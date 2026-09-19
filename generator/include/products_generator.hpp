@@ -5,6 +5,8 @@
 #include <vector>
 #include <unordered_map>
 
+#include "currency_manager.hpp"
+
 class ProductGenerator {
 public:
 	ProductGenerator(pqxx::connection& databaseConnection);
@@ -13,7 +15,7 @@ public:
 private:
 	pqxx::connection& mDatabaseConnection;
 
-	std::vector<std::string> mCurrencyCodes = {"GBP", "USD", "EUR", "JPY"};
+	std::vector<Currency> mCurrencyCodes = {Currency::GBP, Currency::USD, Currency::EUR, Currency::JPY};
 	std::vector<std::string> mCategories = {"Electronics", "Clothing", "Food", "Furniture", "Sports", "Books", "Beauty", "Toys"};
 
 	std::unordered_map<std::string, std::pair<std::int64_t, std::int64_t>> mCategoryPriceRanges = {
@@ -25,12 +27,5 @@ private:
 		{"Books", {300, 3000}},
 		{"Beauty", {300, 8000}},
 		{"Toys", {300, 15000}}
-	};
-
-	std::unordered_map<std::string, double> mCurrencyMultipliers = {
-		{"GBP", 1.0},
-		{"USD", 1.35},
-		{"EUR", 1.16},
-		{"JPY", 2.11}
 	};
 };

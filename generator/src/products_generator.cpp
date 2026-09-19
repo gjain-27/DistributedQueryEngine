@@ -7,6 +7,8 @@
 #include <string>
 #include <tuple>
 
+#include "currency_manager.hpp"
+
 ProductGenerator::ProductGenerator(pqxx::connection& databaseConnection)
 	: mDatabaseConnection(databaseConnection) {}
 
@@ -23,18 +25,19 @@ void ProductGenerator::generateData(int productCount) {
 	pqxx::work transaction{ mDatabaseConnection };
 	auto stream = pqxx::stream_to::table(transaction, { "products" }, { "category", "base_price", "currency_code" });
 
+	CurrencyManager currencyManager;
+
 	for (int i = 0; i < productCount; i++) {
 		const std::string& category = mCategories[categoryUniformDistribution(generator)];
-		const std::string& currencyCode = mCurrencyCodes[currencyCodeUniformDistribution(generator)];
+		const Currency currencyCode = mCurrencyCodes[currencyCodeUniformDistribution(generator)];
 
 		auto [minPrice, maxPrice] = mCategoryPriceRanges.at(category);
 		std::uniform_int_distribution<std::int64_t> priceDistribution(minPrice, maxPrice);
 		std::int64_t basePriceGBP = priceDistribution(generator);
 
-		double multiplier = mCurrencyMultipliers.at(currencyCode);
-		std::int64_t basePrice = static_cast<std::int64_t>(basePriceGBP * multiplier);
+		std::int64_t basePrice = currencyManager.convert(basePriceGBP, Currency::GBP, currencyCode);
 
-		stream << std::make_tuple(category, basePrice, currencyCode);
+		stream << std::make_tuple(category, basePrice, currencyManager.toString(currencyCode));
 	}
 
 	stream.complete();
