@@ -15,7 +15,6 @@ public:
 private:
 	pqxx::connection& mDatabaseConnection;
 
-	std::vector<Currency> mCurrencyCodes = {Currency::GBP, Currency::USD, Currency::EUR, Currency::JPY};
 	std::vector<std::string> mCategories = {"Electronics", "Clothing", "Food", "Furniture", "Sports", "Books", "Beauty", "Toys"};
 
 	std::unordered_map<std::string, std::pair<std::int64_t, std::int64_t>> mCategoryPriceRanges = {
