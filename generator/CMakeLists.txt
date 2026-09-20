@@ -1,5 +1,3 @@
-find_package(libpqxx CONFIG REQUIRED)
-
 add_executable(DataGenerator
 	src/main.cpp
 	src/customers_generator.cpp

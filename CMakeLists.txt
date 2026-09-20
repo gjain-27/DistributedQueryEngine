@@ -8,6 +8,8 @@ endif()
 
 project ("DistributedQueryEngine")
 
+find_package(libpqxx CONFIG REQUIRED)
+
 add_subdirectory("common")
 add_subdirectory("generator")
 add_subdirectory("DQE")
