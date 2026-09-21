@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "currency_manager.hpp"
+#include "time_utils.hpp"
 
 struct Product {
 	std::string productId;
@@ -24,8 +25,7 @@ TransactionGenerator::TransactionGenerator(pqxx::connection& databaseConnection)
 
 std::string formatTimestamp(std::chrono::system_clock::time_point timePoint) {
 	std::time_t time = std::chrono::system_clock::to_time_t(timePoint);
-	std::tm utcTime{};
-	gmtime_s(&utcTime, &time);
+	std::tm utcTime = toUtcTm(time);
 
 	std::ostringstream oss;
 	oss << std::put_time(&utcTime, "%Y-%m-%dT%H:%M:%SZ");
