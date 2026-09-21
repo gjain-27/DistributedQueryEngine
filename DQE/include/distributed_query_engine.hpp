@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstdint>
 #include <thread>
+#include <utility>
 
 #include "currency_manager.hpp"
 #include "linear_query_engine.hpp"
@@ -23,8 +24,8 @@ private:
 	size_t mThreadCount;
 	CurrencyManager mCurrencyManager;
 
-	std::vector<std::string> getDistinctCountryCodes();
-	std::vector<std::string> selectWorkerCountryCodes(const std::vector<std::string>& countryCodes) const;
+	std::vector<std::pair<std::string, std::int64_t>> getCountryWorkloads();
+	std::vector<std::string> selectWorkerCountryCodes(const std::vector<std::pair<std::string, std::int64_t>>& workloads) const;
 
 	std::vector<CountryMonthResult> queryCountry(const std::string& countryCode);
 };

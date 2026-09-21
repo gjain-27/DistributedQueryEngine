@@ -23,30 +23,44 @@ DistributedQueryEngine::DistributedQueryEngine(const std::string& connectionStri
 	mThreadCount = threadCount;
 }
 
-std::vector<std::string> DistributedQueryEngine::getDistinctCountryCodes() {
+std::vector<std::pair<std::string, std::int64_t>> DistributedQueryEngine::getCountryWorkloads() {
 	pqxx::connection connection{ mConnectionString };
 	pqxx::work transaction{ connection };
 
-	std::vector<std::string> countryCodes;
+	std::vector<std::pair<std::string, std::int64_t>> workloads;
 
-	auto stream = pqxx::stream_from::query(transaction, "SELECT DISTINCT country_code FROM stores ORDER BY country_code");
+	auto stream = pqxx::stream_from::query(transaction,
+		"SELECT country_code, COUNT(*) AS store_count FROM stores "
+		"GROUP BY country_code ORDER BY store_count DESC, country_code"
+	);
 
-	for (auto [countryCode] : stream.iter<std::string>()) {
-		countryCodes.push_back(std::move(countryCode));
+	for (auto [countryCode, storeCount] : stream.iter<std::string, std::int64_t>()) {
+		workloads.emplace_back(std::move(countryCode), storeCount);
 	}
 
 	stream.complete();
 	transaction.commit();
 
-	return countryCodes;
+	return workloads;
 }
 
-std::vector<std::string> DistributedQueryEngine::selectWorkerCountryCodes(const std::vector<std::string>& countryCodes) const {
+std::vector<std::string> DistributedQueryEngine::selectWorkerCountryCodes(const std::vector<std::pair<std::string, std::int64_t>>& workloads) const {
+	std::vector<std::int64_t> workerLoads(mWorkerCount, 0);
 	std::vector<std::string> selected;
 
-	for (size_t i = 0; i < countryCodes.size(); i++) {
-		if (i % mWorkerCount == mWorkerIndex) {
-			selected.push_back(countryCodes[i]);
+	for (const auto& [countryCode, storeCount] : workloads) {
+		size_t leastLoadedWorker = 0;
+
+		for (size_t i = 1; i < mWorkerCount; i++) {
+			if (workerLoads[i] < workerLoads[leastLoadedWorker]) {
+				leastLoadedWorker = i;
+			}
+		}
+
+		workerLoads[leastLoadedWorker] += storeCount;
+
+		if (leastLoadedWorker == mWorkerIndex) {
+			selected.push_back(countryCode);
 		}
 	}
 
@@ -93,7 +107,7 @@ std::vector<CountryMonthResult> DistributedQueryEngine::queryCountry(const std::
 std::vector<CountryMonthResult> DistributedQueryEngine::runCountryMonthReport() {
 	std::vector<CountryMonthResult> results;
 
-	std::vector<std::string> countryCodes = selectWorkerCountryCodes(getDistinctCountryCodes());
+	std::vector<std::string> countryCodes = selectWorkerCountryCodes(getCountryWorkloads());
 
 	auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -114,9 +128,7 @@ std::vector<CountryMonthResult> DistributedQueryEngine::runCountryMonthReport() 
 	auto endTime = std::chrono::high_resolution_clock::now();
 	auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 
-	std::cout << "Distributed query engine (worker " << mWorkerIndex << "/" << mWorkerCount << ", "
-		<< mThreadCount << " threads): " << countryCodes.size()
-		<< " queries run in " << durationMs << " ms" << std::endl;
+	std::cout << "Distributed query engine (worker " << mWorkerIndex << "/" << mWorkerCount << ", " << mThreadCount << " threads): " << countryCodes.size() << " queries run in " << durationMs << " ms" << std::endl;
 
 	return results;
 }
