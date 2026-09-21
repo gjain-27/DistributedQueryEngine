@@ -2,6 +2,7 @@ add_executable(DQE
 	src/main.cpp
 	src/linear_query_engine.cpp
 	src/threaded_query_engine.cpp
+	src/distributed_query_engine.cpp
 )
 	
 target_compile_features(DQE PRIVATE cxx_std_20)
